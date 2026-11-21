@@ -74,7 +74,7 @@ def inline_data(html):
     return out
 
 
-def meta(lib):
+def meta(lib, no_orig=False):
     base, d = SRC[lib], os.path.join(OUT, lib)
     os.makedirs(d, exist_ok=True)
     if lib in ('pose', 'costume', 'anime'):
@@ -85,6 +85,9 @@ def meta(lib):
             sys.exit(f'{lib}: 页面结构可能已变化，没找到数据')
         json.dump(data, open(os.path.join(d, 'data.json'), 'w'), ensure_ascii=False)
         keys = {'pose': ['サムネ', '原寸'], 'costume': ['サムネ', '画像', '原寸'], 'anime': ['サムネ', '画像', '原寸']}[lib]
+        # --no-orig：跳过服装/动画的原寸 PNG（瘦身构建用；pose 的原寸仍需下载，构建 p/i 内嵌图）
+        if no_orig and lib in ('costume', 'anime'):
+            keys = [k for k in keys if k != '原寸']
         return [x[k] for x in data['D'] for k in keys if x.get(k)]
     for f in ('images.js', 'ranking.js'):
         open(os.path.join(d, f), 'wb').write(get(base + 'data/' + f))
@@ -96,8 +99,9 @@ def meta(lib):
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('-')] or list(SRC)
     only_meta = '--meta-only' in sys.argv
+    no_orig = '--no-orig' in sys.argv
     for lib in args:
-        files = meta(lib)
+        files = meta(lib, no_orig=no_orig)
         print(f'{lib}: {len(files)} 个文件', flush=True)
         if only_meta:
             continue

@@ -15,7 +15,7 @@
 [![在线体验](https://img.shields.io/badge/demo-posewear.pages.dev-ff2442)](https://posewear.pages.dev)
 [![GitHub stars](https://img.shields.io/github/stars/atuizz/posewear?style=flat&color=black)](https://github.com/atuizz/posewear/stargazers)
 
-[在线体验](https://posewear.pages.dev) · [功能](#功能) · [快速开始](#快速开始) · [部署](#部署) · [常见问题](#常见问题) · [English](README.en.md) · [日本語](README.ja.md)
+[在线体验](https://posewear.pages.dev) · [功能](#功能) · [快速开始](#快速开始) · [部署](#部署) · [常见问题](#常见问题) · [English](README.en.md)
 
 <img src="docs/home.jpg" alt="首页截图" width="900">
 
@@ -95,6 +95,14 @@ python3 -m http.server 8787 -d dist
 | `POSEWEAR_SITE` | 站点地址，用于 sitemap 和分享链接 | `https://posewear.pages.dev` |
 
 ## 部署
+
+### GitHub Pages（本仓库默认，云端构建，本机不用下载素材）
+
+推送代码后 GitHub Actions 会自动完成：抓取图库素材 → 瘦身构建（`POSEWEAR_SLIM=1`，无 `o/` 原图，压回 Pages 1GB 上限内）→ 发布 Pages。首次需在仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**。
+
+> **画图源是 HTTP 地址**：本仓库已把默认画图源接到一个 Flow2API 部署（`http://154.89.148.49:8000`，Nano Banana 2.1，密钥已在设置里内置）。GitHub Pages 默认强制 HTTPS，浏览器会拦截 HTTPS 页面发往 HTTP 接口的画图请求，所以请在同一页关闭 **Enforce HTTPS**，然后一律用 `http://<用户名>.github.io/<仓库名>/` 访问。若换用 HTTPS 画图源则无需此步。
+
+### Cloudflare Pages（官方方式，本地构建）
 
 仓库不带素材，所以需要先在本地构建，再上传 `dist/` 到 Cloudflare Pages：
 

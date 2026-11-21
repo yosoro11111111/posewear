@@ -14,6 +14,11 @@ put('poses.json',PJ);put('costumes.json',CJ);put('anime.json',AJ);put('portraits
 for f in ['style.css','zip.js','extras.js','studio.js']: put(f,open(f'src/{f}','rb').read())
 app=open('src/app.js').read()
 if AH: app=app.replace("const AH='';",f"const AH='{AH}/';")
+if os.environ.get('POSEWEAR_SLIM'):
+  # GitHub Pages 瘦身构建：不含 o/ 原图，「下载原图」改指向站内大图（inline/medium webp）
+  app=app.replace("const orig=it=>it.ext?'':((AH||'/')+(it.angles?it.angles[it.ai].o:it.o));",
+                  "const orig=it=>it.ext?'':((AH||'/')+(it.angles?it.angles[it.ai].i:it.m||it.i));")
+  app=app.replace('下载原图 PNG','下载大图')
 app=app.replace("'poses.json'","'/"+A['poses.json']+"'").replace("'costumes.json'","'/"+A['costumes.json']+"'").replace("'anime.json'","'/"+A['anime.json']+"'").replace("'portraits.json'","'/"+A['portraits.json']+"'").replace("'depths.json'","'/"+A['depths.json']+"'")
 put('app.js',app)
 VER='posewear-v10-'+h8(''.join(A.values()))
@@ -80,14 +85,11 @@ def page(kind,it,rel):
 open(f'{D}/404.html','w').write(f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>页面不存在 | 衣姿 PoseWear</title><meta name="robots" content="noindex"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><style>{CSS}
 .nf{{max-width:480px;margin:12vh auto;text-align:center;padding:0 20px}}.nf b{{font-size:64px;color:#d81b3a;display:block;line-height:1}}</style></head><body><header><a href="/">{LOGO}衣姿 PoseWear</a></header>
 <div class="nf"><b>404</b><h1>这个页面不存在</h1><p class="mu">链接可能写错了，或者内容已经调整。</p><a class="go" href="/">回到首页</a><a class="go" style="background:#111" href="/#costume">看看服装库</a></div></body></html>''')
-_IMG=" ".join(["'self'","data:","blob:"]+list(DEPTH_ORIGINS)+([AH] if AH else []))
+_IMG=" ".join(["'self'","data:","blob:","https://flow-content.google","https://images.weserv.nl"]+list(DEPTH_ORIGINS)+([AH] if AH else []))
 CSP=("default-src 'self'; script-src 'self' "+SH+"; style-src 'self' 'unsafe-inline'; img-src "+_IMG+"; font-src 'self' data:; "
- "connect-src 'self' data: blob: https://api.openai.com https://generativelanguage.googleapis.com https://*.volces.com https://*.bytepluses.com https://oaidalleapiprodscus.blob.core.windows.net https://*.googleusercontent.com; "
- "worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests")
+ "connect-src 'self' data: blob: http://154.89.148.49:8000 https://api.openai.com https://generativelanguage.googleapis.com https://*.volces.com https://*.bytepluses.com https://oaidalleapiprodscus.blob.core.windows.net https://*.googleusercontent.com https://images.weserv.nl; "
+ "worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'")
 IMM='  Cache-Control: public, max-age=31536000, immutable\n'
-# Pages Functions 必须位于部署目录内才会随 wrangler pages deploy 一起发布（曾因只传静态产物导致 /api/proxy 丢失，见 issue #7）
-if os.path.isdir('functions'):
-  shutil.rmtree(f'{D}/functions',ignore_errors=True); shutil.copytree('functions',f'{D}/functions')
 open(f'{D}/_headers','w').write(f'''/*
   Content-Security-Policy: {CSP}
   X-Content-Type-Options: nosniff

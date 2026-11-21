@@ -8,6 +8,8 @@ R=os.environ.get('POSEWEAR_RAW','assets-raw'); D='dist'
 # 分离部署：设 POSEWEAR_ASSET_HOST 后，缩略图与原图输出到 dist-assets（独立 Pages 站），主站文件数压回免费版上限内；不设则单站构建，行为不变
 AHOST=os.environ.get('POSEWEAR_ASSET_HOST','').rstrip('/'); AD='dist-assets'; AROOT=AD if AHOST else D
 if AHOST: os.makedirs(AD,exist_ok=True)
+# 瘦身构建（POSEWEAR_SLIM=1，用于 GitHub Pages 单仓 1GB 上限）：不产出 o/ 原图，服装/动画不重编码 m/（数据指向 i/ 原图 webp）
+SLIM=bool(os.environ.get('POSEWEAR_SLIM'))
 LINE={'全身1人・セクシー系':('全身·性感','full body, solo, sexy'),'全身1人・標準系':('全身·标准','full body, solo'),'上半身1人':('上半身','upper body, solo'),'2人絡み':('双人互动','two people, couple')}
 CAT={'寝そべり':'躺卧','セクシー・露骨寄り系':'性感·大胆','立ち':'站姿','座り':'坐姿','かわいい系':'可爱','胸寄せ・谷間強調系':'挤胸·乳沟','膝立ち・四つん這い':'跪立·趴姿','特殊':'特殊','正常位':'正面位','膝立ち':'跪立','横座り・女の子座り':'侧坐·鸭子坐','後背位':'后入位','背面座位':'背面坐位','しゃがみ':'蹲姿','前かがみ':'前倾','顔寄せ系':'贴脸','騎乗位':'骑乘位','立位':'立位','立位密着':'立位贴身','のけぞり・反り':'后仰','ひねり':'扭身','側位':'侧位','座位':'坐位','対面座位':'对面坐位','座位密着':'坐位贴身','密着':'贴身'}
 ANG={'正面':('正面','front view'),'上から':('俯拍','high angle, from above'),'下から':('仰拍','low angle, from below'),'横':('侧面','side view'),'斜め':('斜侧','three-quarter view')}
@@ -22,6 +24,9 @@ for d in pd:
   a=ANG[d['アングル']]; p['angles'].append({'zh':a[0],'en':a[1],'t':'p/t/'+d['id']+'.webp','i':'p/i/'+d['id']+'.webp','o':'o/p/'+d['id']+'.png','_src':d})
 cos=[{'id':d['id'],'cat':CC[d['カテゴリ']][0],'catEn':CC[d['カテゴリ']][1],'kw':d['キーワード'],**dict(zip(('zh','en','ti'),gen2(d['キーワード'],CC[d['カテゴリ']][1],d['id']))),'t':'c/t/'+os.path.basename(d['サムネ']),'m':'c/m/'+d['id']+'.webp','i':'c/i/'+os.path.basename(d['画像']),'o':'o/c/'+d['id']+'.png','_src':d} for d in cd]
 acs=[{'id':d['id'],'cat':CC[d['カテゴリ']][0],'catEn':CC[d['カテゴリ']][1],'kw':d['キーワード'],**dict(zip(('zh','en','ti'),gen2(d['キーワード'],CC[d['カテゴリ']][1],d['id']))),'t':'a/t/'+os.path.basename(d['サムネ']),'m':'a/m/'+d['id']+'.webp','i':'a/i/'+os.path.basename(d['画像']),'o':'o/a/'+d['id']+'.png','_src':d} for d in ad]
+if SLIM:
+  for c in cos: c['m']=c['i']
+  for c in acs: c['m']=c['i']
 # 双人 分类人工复核（看图）
 FIX={'pair60_P031':'坐位','pair60_P053':'立位贴身','pair60_P055':'侧位','pair60_P058':'贴脸'}
 for k,v in FIX.items(): poses[k]['cat']=v
@@ -74,19 +79,22 @@ def cv(d):
   t=f"{AROOT}/p/t/{d['id']}.webp"
   if not os.path.exists(t):
     im=Image.open(f"{R}/pose/{d['サムネ']}").convert('RGB');im.save(t,'WEBP',quality=80,method=6)
-  o=f"{AROOT}/o/p/{d['id']}.png"
-  if not os.path.exists(o): os.link(f"{R}/pose/{d['原寸']}",o)
+  if not SLIM:
+    o=f"{AROOT}/o/p/{d['id']}.png"
+    if not os.path.exists(o): os.link(f"{R}/pose/{d['原寸']}",o)
   o=f"{D}/p/i/{d['id']}.webp"
   if not os.path.exists(o):
     im=Image.open(f"{R}/pose/{d['原寸']}").convert('RGB'); im.thumbnail((1200,1200)); im.save(o,'WEBP',quality=82)
 
 def cm(d):
+  if SLIM: return
   o=f"{D}/c/m/{d['id']}.webp"
   if not os.path.exists(o):
     im=Image.open(f"{R}/costume/{d['画像']}").convert('RGB'); im.thumbnail((1080,1620)); im.save(o,'WEBP',quality=80)
   o=f"{AROOT}/o/c/{d['id']}.png"
   if not os.path.exists(o): os.link(f"{R}/costume/{d['原寸']}",o)
 def ca(d):
+  if SLIM: return
   o=f"{D}/a/m/{d['id']}.webp"
   if not os.path.exists(o):
     im=Image.open(f"{R}/anime/{d['画像']}").convert('RGB'); im.thumbnail((1080,1620)); im.save(o,'WEBP',quality=80)
@@ -98,9 +106,12 @@ def cr(d):
   o=f"{D}/r/m/{d['id']}.webp"
   if not os.path.exists(o):
     im=Image.open(f"{R}/portrait/{d['full']}").convert('RGB'); im.thumbnail((1080,1350)); im.save(o,'WEBP',quality=80)
-  o=f"{AROOT}/o/r/{d['id']}.png"
-  if not os.path.exists(o): os.link(f"{R}/portrait/{d['full']}",o)
-for x in ['p/t','c/m','o/p','o/c','a/m','o/a','r/t','r/m','o/r']: os.makedirs(f'{AROOT if x.endswith("/t") or x.startswith("o/") else D}/{x}',exist_ok=True)
+  if not SLIM:
+    o=f"{AROOT}/o/r/{d['id']}.png"
+    if not os.path.exists(o): os.link(f"{R}/portrait/{d['full']}",o)
+for x in ['p/t','c/m','o/p','o/c','a/m','o/a','r/t','r/m','o/r']:
+  if SLIM and (x.startswith('o/') or x in ('c/m','a/m')): continue
+  os.makedirs(f'{AROOT if x.endswith("/t") or x.startswith("o/") else D}/{x}',exist_ok=True)
 if AHOST:
   # 分离模式下缩略图/原图改写到 dist-assets，删掉 dist 里上一轮单站构建残留的旧文件，
   # 否则主站仍含这批文件、文件数压不回 2 万上限（Codex review on PR #4）

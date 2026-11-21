@@ -1,0 +1,52 @@
+# 云端构建并发布 GitHub Pages：
+# 1. 在 GitHub 的 runner 上抓取图库素材（原站下载，本仓库不含素材）
+# 2. 以瘦身模式构建 dist（POSEWEAR_SLIM=1，无 o/ 原图，压回 Pages 1GB 上限内）
+# 3. 发布到 GitHub Pages
+#
+# 注意：画图源 Flow2API 是 HTTP 地址，浏览器会拦截 HTTPS 页面对它的请求。
+# 请在本仓库 Settings → Pages 关闭 Enforce HTTPS，然后用 http:// 地址访问本站。
+name: Build & Deploy Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install Pillow
+      - name: Fetch gallery assets (thumbs + medium)
+        run: python -X utf8 scripts/fetch-assets.py --no-orig
+      - name: Build dist (slim)
+        run: python -X utf8 build.py
+        env:
+          POSEWEAR_SLIM: '1'
+          POSEWEAR_SITE: ${{ vars.POSEWEAR_SITE || format('https://{0}.github.io/{1}', github.repository_owner, github.event.repository.name) }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
