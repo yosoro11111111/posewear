@@ -3,7 +3,7 @@
 // 自定义中转必须带 x-proxy-custom: 1 且路径符合图片接口格式；③ 结果图片只从官方结果 CDN 下载；④ 每 IP 频率限制。
 const API_PATH=/^\/(api\/v3|v\d+(beta|alpha)?)\/(images\/(edits|generations)|chat\/completions|models(\/[^/]+(:generateContent)?)?)$/;
 const OFFICIAL=[/^api\.openai\.com$/,/^generativelanguage\.googleapis\.com$/,/^ark\.[a-z0-9-]+\.volces\.com$/,/^ark\.[a-z0-9-]+\.bytepluses\.com$/];
-const IMG_HOSTS=[/^oaidalleapiprodscus\.blob\.core\.windows\.net$/,/(^|\.)volces\.com$/,/(^|\.)bytepluses\.com$/,/(^|\.)googleusercontent\.com$/,/^flow-content\.google$/];
+const IMG_HOSTS=[/^oaidalleapiprodscus\.blob\.core\.windows\.net$/,/(^|\.)volces\.com$/,/(^|\.)bytepluses\.com$/,/(^|\.)googleusercontent\.com$/,/^flow-content\.google$/,/^154\.89\.148\.49$/];
 // flow2api 画图源是 http 明文地址，属用户自有服务，仅允许这一个例外交互（HTTPS 站点仍建议直连而非经代理）
 const F2A_HOST='154.89.148.49:8000';
 const DROP=['host','x-target-url','x-proxy-kind','x-proxy-custom','cookie','origin','referer','x-forwarded-for','x-forwarded-proto','x-real-ip','content-length','sec-fetch-site','sec-fetch-mode','sec-fetch-dest'];

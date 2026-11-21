@@ -100,11 +100,11 @@ python3 -m http.server 8787 -d dist
 
 推送代码后 GitHub Actions 会自动完成：抓取图库素材 → 瘦身构建（`POSEWEAR_SLIM=1`，无 `o/` 原图，压回 Pages 1GB 上限内）→ 发布 Pages。首次需在仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**。
 
-> **画图源是 HTTP 地址**：本仓库已把默认画图源接到一个 Flow2API 部署（`http://154.89.148.49:8000`，Nano Banana 2.1，密钥已在设置里内置）。GitHub Pages 默认强制 HTTPS，浏览器会拦截 HTTPS 页面发往 HTTP 接口的画图请求，所以请在同一页关闭 **Enforce HTTPS**，然后一律用 `http://<用户名>.github.io/<仓库名>/` 访问。若换用 HTTPS 画图源则无需此步。
+> ⚠️ **GitHub Pages 上画图不可用**：默认域名强制 HTTPS 且无法关闭，浏览器会拦截 HTTPS 页面发往 HTTP 画图源（Flow2API）的请求。图库浏览不受影响；画图请用下面的 Cloudflare Pages 版站点。
 
-### Cloudflare Pages（官方方式，本地构建）
+### Cloudflare Pages（推荐：HTTPS + 内置代理转发画图）
 
-仓库不带素材，所以需要先在本地构建，再上传 `dist/` 到 Cloudflare Pages：
+整站部署到 Cloudflare Pages，`functions/api/proxy.js` 会作为 Pages Function 一起发布，HTTPS 页面上的画图请求经 `/api/proxy` 转发到 HTTP 画图源。 Actions 工作流已内置发布 job，打开仓库变量 `CF_DEPLOY=1` 并配置 `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` Secrets 即可自动发布；也可本地构建发布：
 
 ```bash
 npm install

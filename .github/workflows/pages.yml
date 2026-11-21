@@ -50,3 +50,24 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # Cloudflare Pages 发布（仓库变量 CF_DEPLOY=1 时启用）：画图源是 HTTP，GitHub Pages 强制 HTTPS
+  # 会拦截混合内容，需要经 Pages Functions 的 /api/proxy 转发，故正式站点部署在 Cloudflare Pages。
+  deploy-cf:
+    needs: build
+    if: ${{ vars.CF_DEPLOY == '1' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+          path: artifact
+      - name: Extract
+        run: mkdir -p site && tar -xzf artifact/github-pages.tar -C site
+      - name: Deploy to Cloudflare Pages (with /api proxy function)
+        run: npx wrangler@4 pages deploy site --project-name "$CF_PROJECT" --branch main --commit-dirty true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_PROJECT: ${{ vars.CF_PROJECT || 'posewear' }}
