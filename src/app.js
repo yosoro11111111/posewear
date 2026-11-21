@@ -55,7 +55,9 @@ function card(it,d){const isS=st.sel.includes(it.k),isF=st.fav.has(it.k),P=it.ty
  <div class="info"><h3 title="${esc(t)}">${esc(t)}</h3><div class="sub">${esc(subtitle(it))}</div>${D?`<div class="sub dim">${esc(it.line)} · ${esc(it.cat)}</div>`:''}<div class="tags">${tags.map(([x,c])=>`<span class="tag ${c}">${esc(x)}</span>`).join('')}</div>
  <div class="copy"><button data-a="cpzh">复制中文</button><button data-a="cpen">复制英文</button></div></div></article>`}
 function grp(k){const t=st.recT[k];if(!t)return'更早';const d=new Date();d.setHours(0,0,0,0);return t>=d?'今天':t>=d-864e5?'昨天':t>=d-6*864e5?'近 7 天':'更早'}
-function more(){if(st.n>=st.list.length)return;const G=st.tab=='recent'&&!st.q&&!Object.values(st.f).some(Boolean);let pg=G&&st.n?grp(st.list[st.n-1].k):'';const h=st.list.slice(st.n,st.n+30).map((it,i)=>{let x='';if(G){const g=grp(it.k);if(g!=pg){x=`<h4 class="grp">${g}</h4>`;pg=g}}return x+card(it,RM?0:Math.min(i,14)*35)}).join('');st.n+=30;$('#grid').insertAdjacentHTML('beforeend',h)}
+function more(){if(st.n>=st.list.length){const old=$('#endN');if(old)return;const hid=(DATA[st.tab]||[]).filter(it=>it.a&&!st.adult).length;
+  if(st.list.length&&$('#grid').children.length)$('#grid').insertAdjacentHTML('beforeend',`<div class="endn" id="endN"><span>已显示全部 ${st.list.length} 项</span>${hid?`<span>另有 <b>${hid}</b> 项成人内容未显示</span><button class="sm ghost" data-age>显示成人内容</button>`:''}</div>`);return}
+ const G=st.tab=='recent'&&!st.q&&!Object.values(st.f).some(Boolean);let pg=G&&st.n?grp(st.list[st.n-1].k):'';const h=st.list.slice(st.n,st.n+30).map((it,i)=>{let x='';if(G){const g=grp(it.k);if(g!=pg){x=`<h4 class="grp">${g}</h4>`;pg=g}}return x+card(it,RM?0:Math.min(i,14)*35)}).join('');st.n+=30;$('#endN')&&$('#endN').remove();$('#grid').insertAdjacentHTML('beforeend',h)}
 const grid=$('#grid');
 grid.addEventListener('load',e=>{if(e.target.tagName=='IMG'){e.target.classList.add('ld');e.target.parentNode.classList.add('done')}},true);
 grid.addEventListener('error',e=>{if(e.target.tagName=='IMG'){e.target.parentNode.classList.add('err','done')}},true);
