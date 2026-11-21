@@ -63,8 +63,18 @@ jobs:
         with:
           name: github-pages
           path: artifact
-      - name: Extract
-        run: mkdir -p site && tar -xzf artifact/github-pages.tar -C site
+      - name: Extract site (pages artifact is a zstd/gzip tar; auto-detect)
+        run: |
+          mkdir -p site
+          f=$(find artifact -type f | head -1)
+          echo "artifact file: $f"
+          if echo "$f" | grep -q '\.zip$'; then
+            unzip -q "$f" -d artifact/unz
+            f=$(find artifact/unz -type f | head -1)
+            echo "inner file: $f"
+          fi
+          tar -I unzstd -xf "$f" -C site 2>/dev/null || tar -xf "$f" -C site
+          echo "site contents:"; ls site | head -5
       - name: Deploy to Cloudflare Pages (with /api proxy function)
         run: npx wrangler@4 pages deploy site --project-name "$CF_PROJECT" --branch main --commit-dirty true
         env:
