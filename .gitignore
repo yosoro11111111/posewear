@@ -18,3 +18,5 @@ tests/screenshots/
 indexnow.key
 urls.txt
 .indexnow-state.json
+# 画图服务端配置（CI 从 GitHub Secrets 生成，含上游地址/密钥/口令，不入仓库）
+functions/api/paint.config.js

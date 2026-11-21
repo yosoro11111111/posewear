@@ -102,9 +102,11 @@ python3 -m http.server 8787 -d dist
 
 > ⚠️ **GitHub Pages 上画图不可用**：默认域名强制 HTTPS 且无法关闭，浏览器会拦截 HTTPS 页面发往 HTTP 画图源（Flow2API）的请求。图库浏览不受影响；画图请用下面的 Cloudflare Pages 版站点。
 
-### Cloudflare Pages（推荐：HTTPS + 内置代理转发画图）
+### Cloudflare Pages（正式站点：HTTPS + 画图口令门）
 
-整站部署到 Cloudflare Pages，`functions/api/proxy.js` 会作为 Pages Function 一起发布，HTTPS 页面上的画图请求经 `/api/proxy` 转发到 HTTP 画图源。 Actions 工作流已内置发布 job，打开仓库变量 `CF_DEPLOY=1` 并配置 `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` Secrets 即可自动发布；也可本地构建发布：
+整站部署到 Cloudflare Pages。画图请求不直接从浏览器发出，而是经 Pages Function **`/api/paint`** 转发：口令校验与上游密钥注入都在服务端完成，**画图源地址与密钥不下发浏览器**。上游配置由 CI 在发布时从 GitHub Secrets 生成（`F2A_BASE` / `F2A_KEY` / `PAINT_PASS`，见 `functions/api/paint.js`），不进仓库。上游必须是域名形式（裸 IP 会被 Cloudflare 边缘以 1003 拦截），本仓库用 DNS-only 的 `flow.yosoro.site → 服务器IP`。
+
+Actions 工作流已内置发布 job：仓库变量 `CF_DEPLOY=1`、`CF_PROJECT=<项目名>`，Secrets `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` 及上述三个画图配置即可自动发布；也可本地构建发布：
 
 ```bash
 npm install

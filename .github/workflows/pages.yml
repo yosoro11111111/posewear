@@ -75,6 +75,20 @@ jobs:
           fi
           tar -I unzstd -xf "$f" -C site 2>/dev/null || tar -xf "$f" -C site
           echo "site contents:"; ls site | head -5
+      - name: Inject server-side paint config (from Secrets, never committed)
+        run: |
+          cat > functions/api/paint.config.js <<'HEADER'
+          // 由 CI 生成（.gitignore 忽略）：画图上游地址、密钥与口令，只存在于部署产物
+          HEADER
+          cat >> functions/api/paint.config.js <<EOF
+          export const F2A_BASE = '${F2A_BASE}';
+          export const F2A_KEY = '${F2A_KEY}';
+          export const PAINT_PASS = '${PAINT_PASS}';
+          EOF
+        env:
+          F2A_BASE: ${{ secrets.F2A_BASE }}
+          F2A_KEY: ${{ secrets.F2A_KEY }}
+          PAINT_PASS: ${{ secrets.PAINT_PASS }}
       - name: Deploy to Cloudflare Pages (with /api proxy function)
         run: npx wrangler@4 pages deploy site --project-name "$CF_PROJECT" --branch main --commit-dirty true
         env:
