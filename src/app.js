@@ -61,7 +61,11 @@ function more(){if(st.n>=st.list.length){const old=$('#endN');if(old)return;cons
 const grid=$('#grid');
 grid.addEventListener('load',e=>{if(e.target.tagName=='IMG'){e.target.classList.add('ld');e.target.parentNode.classList.add('done')}},true);
 grid.addEventListener('error',e=>{if(e.target.tagName=='IMG'){e.target.parentNode.classList.add('err','done')}},true);
-new IntersectionObserver(e=>e[0].isIntersecting&&more(),{rootMargin:'1400px'}).observe($('#sentinel'));
+// 无限滚动：不用 IntersectionObserver（它只在交叉状态变化时触发，最后一批卡片很少时
+// 哨兵可能一直停留在 rootMargin 区内，滚动不再触发，表现为“滚到底就没下文”）
+// 改为每次滚动/缩放直接量哨兵与视口的距离，确定性触发。
+function moreCheck(){const s=$('#sentinel');if(!s)return;const r=s.getBoundingClientRect();if(r.top<innerHeight+1400)more()}
+addEventListener('scroll',moreCheck,{passive:true});addEventListener('resize',moreCheck);moreCheck();
 function refreshCard(k){const el=grid.querySelector(`.card[data-k="${CSS.escape(k)}"]`);if(!el)return;const t=document.createElement('div');t.innerHTML=card(ITEMS[k]);const n=t.firstElementChild;n.style.animation='none';n.querySelector('img').classList.add('ld');n.querySelector('.ph').classList.add('done');el.replaceWith(n)}
 function setAng(it,i){it.ai=i;st.ang[it.k]=i;SV('ang',st.ang);refreshCard(it.k)}
 function dropCard(k){const el=grid.querySelector(`.card[data-k="${CSS.escape(k)}"]`);const i=st.list.findIndex(x=>x.k==k);if(i>=0){st.list.splice(i,1);st.n=Math.max(0,st.n-1)}const fin=()=>{el&&el.remove();if(!st.list.length)apply();else{const tot=base().length;$('#count').innerHTML=st.list.length==tot?`共 <b>${tot}</b> 项`:`<b>${st.list.length}</b> / ${tot} 项`;grid.querySelectorAll('.rgrp').forEach(g=>{const n=g.nextElementSibling;if(!n||n.classList.contains('rgrp'))g.remove()})}};if(el&&!RM)el.animate([{opacity:1,transform:'none'},{opacity:0,transform:'scale(.92)'}],{duration:220,easing:'cubic-bezier(.4,0,.2,1)'}).finished.then(fin);else fin()}
