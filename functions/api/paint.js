@@ -33,11 +33,14 @@ export async function onRequest(ctx) {
       return new Response(r.body, { status: r.status, headers: { 'content-type': r.headers.get('content-type') || 'application/json', 'cache-control': 'no-store' } });
     }
     if (request.method === 'POST') {
-      const body = await request.text();
+      let body;
+      try { body = JSON.parse(await request.text()); } catch (e) { return j(400, '请求体格式不正确'); }
+      // 强制流式：Function 立刻把响应头与数据流转发给客户端，长时间生成不会被边缘掐断
+      body.stream = true;
       const r = await fetch(F2A_BASE + '/chat/completions', {
-        method: 'POST', headers: Object.assign(h, { 'Content-Type': 'application/json' }), body
+        method: 'POST', headers: Object.assign(h, { 'Content-Type': 'application/json' }), body: JSON.stringify(body)
       });
-      return new Response(r.body, { status: r.status, headers: { 'content-type': r.headers.get('content-type') || 'application/json', 'cache-control': 'no-store' } });
+      return new Response(r.body, { status: r.status, headers: { 'content-type': r.headers.get('content-type') || 'text/event-stream', 'cache-control': 'no-store' } });
     }
     return j(405, '只支持 GET / POST');
   } catch (e) {

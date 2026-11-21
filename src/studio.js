@@ -185,9 +185,15 @@ const F2A_AR={'auto':'square','1:1':'square','2:3':'portrait','9:16':'portrait',
 function f2aModel(){let m=modelOf();if(/-(square|portrait|landscape|four-three|three-four)(-(2k|4k))?$/.test(m))return m;let q='';const qm=m.match(/-(2k|4k)$/);if(qm){q=qm[0];m=m.slice(0,m.length-q.length)}return m+'-'+(F2A_AR[$('#wbAR').value]||'square')+q}
 async function genOnce(imgs,prompt,sig){const ar=$('#wbAR').value,m=modelOf(),P=proto();let warn='';
  if(P=='chat'){const parts=[];for(const b of imgs)parts.push({type:'image_url',image_url:{url:await dataURL(b)}});parts.push({type:'text',text:prompt});
-  const r=await call(`${root()}/chat/completions`,{method:'POST',signal:sig,headers:Object.assign({'Content-Type':'application/json'},auth()),body:JSON.stringify({model:f2aModel(),messages:[{role:'user',content:parts}],stream:false})});
-  const j=await r.json().catch(()=>null);if(!r.ok)throw await apiErr(r,j);
-  const txt=((j||{}).choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||'';
+  const r=await call(`${root()}/chat/completions`,{method:'POST',signal:sig,headers:Object.assign({'Content-Type':'application/json'},auth()),body:JSON.stringify({model:f2aModel(),messages:[{role:'user',content:parts}],stream:true})});
+  if(!r.ok){const j=await r.json().catch(()=>null);throw await apiErr(r,j)}
+  let txt='';const ct=r.headers.get('content-type')||'';
+  if(/event-stream/i.test(ct)&&r.body){const rd=r.body.getReader(),dec=new TextDecoder();let buf='';
+   for(;;){const{done,value}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});let i;
+    while((i=buf.indexOf('\n'))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);
+     if(!/^data:/.test(line))continue;const d=line.slice(5).trim();if(d=='[DONE]')continue;
+     try{const j=JSON.parse(d),de=j.choices&&j.choices[0]&&j.choices[0].delta;if(de&&de.content)txt+=de.content}catch(e){}}}}
+  else{const j=await r.json().catch(()=>null);txt=((j||{}).choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||''}
   const mm=txt.match(/!\[[^\]]*\]\(\s*(https?:\/\/[^)\s]+?)\s*\)/)||txt.match(/(https?:\/\/[^\s)"'<>\]]+)/);
   if(!mm){const e=Error(txt||'empty');e.zh='画图服务没有返回图片'+(txt?'\n模型回复：'+txt.slice(0,300):'（响应为空，请稍后重试）');throw e}
   return{blob:await fetchResult(mm[1])}}
