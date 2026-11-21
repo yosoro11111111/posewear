@@ -92,6 +92,7 @@ CSP=("default-src 'self'; script-src 'self' "+SH+"; style-src 'self' 'unsafe-inl
 IMM='  Cache-Control: public, max-age=31536000, immutable\n'
 open(f'{D}/_headers','w').write(f'''/*
   Content-Security-Policy: {CSP}
+  Cache-Control: public, max-age=0, must-revalidate
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: DENY
